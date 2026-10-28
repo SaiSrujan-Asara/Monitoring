@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus-sa
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-cluster-role
+rules:
+  # 1. Core API group permissions to discover nodes, services, endpoints, and pods
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - nodes/metrics
+      - services
+      - endpoints
+      - pods
+    verbs: ["get", "list", "watch"]
+  
+  # 2. Networking API group permissions to discover Ingress routes
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - ingresses
+    verbs: ["get", "list", "watch"]
+  
+  # 3. Non-resource URL permission required to scrape system metrics from the API server
+  - nonResourceURLs: ["/metrics"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-cluster-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: prometheus-sa
+    namespace: default # Must match the namespace of your Prometheus deployment
+roleRef:
+  kind: ClusterRole
+  name: prometheus-cluster-role # Must match the ClusterRole name above
+  apiGroup: rbac.authorization.k8s.io
+

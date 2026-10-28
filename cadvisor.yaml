@@ -1,0 +1,70 @@
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: cadvisor
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: cadvisor
+  template:
+    metadata:
+      labels:
+        app: cadvisor
+    spec:
+      containers:
+        - name: cadvisor
+          image: ghcr.io/google/cadvisor:0.55.1
+          args:
+            - --docker=unix:///var/run/docker.sock
+          ports:
+            - name: metrics
+              containerPort: 8080
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: rootfs
+              mountPath: /rootfs
+              readOnly: true
+            - name: sys
+              mountPath: /sys
+              readOnly: true
+            - name: docker-data
+              mountPath: /var/lib/docker
+              readOnly: true
+            - name: docker-socket
+              mountPath: /var/run/docker.sock
+              readOnly: true
+      volumes:
+        - name: rootfs
+          hostPath:
+            path: /
+            type: Directory
+        - name: sys
+          hostPath:
+            path: /sys
+            type: Directory
+        - name: docker-data
+          hostPath:
+            path: /var/lib/docker
+            type: Directory
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cadvisor
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: cadvisor
+  ports:
+    - name: metrics
+      port: 8080
+      targetPort: metrics
+
