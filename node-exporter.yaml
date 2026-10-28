@@ -20,6 +20,7 @@ spec:
         image: quay.io/prometheus/node-exporter:v1.8.2
         args:
         - '--path.rootfs=/host'
+        - '--collector.systemd'
         ports:
         - containerPort: 9100
           hostPort: 9100
@@ -29,10 +30,16 @@ spec:
           mountPath: /host
           readOnly: true
           mountPropagation: HostToContainer
+        - name: dbus
+          mountPath: /var/run/dbus/systemd_dbus_socket
+          readOnly: true
       volumes:
       - name: root
         hostPath:
           path: /
+      - name: dbus
+        hostPath:
+          path: /var/run/dbus/systemd_dbus_socket
 ---
 apiVersion: v1
 kind: Service
